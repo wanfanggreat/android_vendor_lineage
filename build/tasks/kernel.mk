@@ -542,7 +542,12 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(KERNEL_MODULE
 					$(call $(if $(filter $(word 2,$(subst :, ,$(p))),kbuild),make-kbuild-module-target,make-external-module-target),$(word 1,$(subst :, ,$(p))),$$rpath,INSTALL_MOD_PATH=$(MODULES_INTERMEDIATES) INSTALL_MOD_STRIP=1 KERNEL_UAPI_HEADERS_DIR=$(KERNEL_OUT) modules_install)) || exit "$$?"; \
 			) \
 			kernel_release=$$(cat $(KERNEL_RELEASE)) \
-			kernel_modules_dir=$(MODULES_INTERMEDIATES)/lib/modules/$$kernel_release \
+			kernel_modules_dir=$(MODULES_INTERMEDIATES)/lib/modules/$$kernel_release; \
+			for ko in $$(find $(KERNEL_OUT) -type f -name '*.ko'); do \
+				b=$$(basename $$ko); \
+				[ -n "$$(find $$kernel_modules_dir -type f -name $$b)" ] || cp $$ko $$kernel_modules_dir/; \
+			done; \
+			cp $(KERNEL_OUT)/modules.builtin $(KERNEL_OUT)/modules.order $$kernel_modules_dir/ 2>/dev/null || true; \
 			all_modules=$$(find $$kernel_modules_dir -type f -name '*.ko') \
 			$(foreach s, $(TARGET_MODULE_ALIASES),\
 				$(eval p := $(subst :,$(space),$(s))) \
